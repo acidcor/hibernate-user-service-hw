@@ -16,14 +16,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public User login(String email, String password) throws AuthenticationException {
-        User user = userService.findByEmail(email).orElseThrow(
-                () -> new AuthenticationException("User with such email isn't exists: " + email)
-        );
-        String cryptedPass = HashUti.getHashedPass(password, user.getSalt());
-        if (cryptedPass.equals(user.getPassword())) {
+        User user = userService.findByEmail(email).get();
+        if (HashUti.getHashedPass(password, user.getSalt()).equals(user.getPassword())) {
             return user;
         }
-        throw new AuthenticationException("Password doesn't match!");
+        throw new AuthenticationException("User not found or password don't match!");
     }
 
     @Override
@@ -40,17 +37,15 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         checkPass(password);
     }
 
-    private void checkPass(String password) throws RegistrationException {
-        if (password.isEmpty()) {
-            throw new RegistrationException("Password field is empty");
-        }
+    private boolean checkPass(String password) {
+        return password.isEmpty();
     }
 
     private void checkEmail(String email) throws RegistrationException {
         if (email.isEmpty()) {
             throw new RegistrationException("Email field is empty");
         }
-        if (!userService.findByEmail(email).isEmpty()) {
+        if (userService.findByEmail(email).isPresent()) {
             throw new RegistrationException("User with such email already exists: " + email);
         }
     }
